@@ -17,7 +17,7 @@ def get_opacity(image):
     return get_channel_data(image, 'A') / 255
 
 def get_stripe(image, top, bottom):
-    return image.crop(0, top, image.width, bottom)
+    return image.crop((0, top, image.width, bottom))
 
 def get_stripes(image):
     image = image.convert('LA')
