@@ -1,25 +1,9 @@
+from imaging.core.image import *
 import os
 from PIL import Image
 import numpy
 import math
 from scipy.signal import medfilt
-
-def get_image_channels(image: Image.Image):
-    from itertools import count
-    return dict(zip(image.getbands(), count()))
-
-def get_channel_data(image: Image.Image, *channel_names: str, as_dict: bool = False):
-    width, height = image.size
-    channels = get_image_channels(image)
-    channel_data = {}
-    for channel_name in channel_names:
-        channel_index = channels[channel_name]
-        channel_data[channel_name] = numpy.array(image.getdata(channel_index)).reshape(height, width)
-    if as_dict or len(channel_names) != 1:
-        return dict(zip(channel_names, (channel_data[channel_name] for channel_name in channel_names)))
-    else:
-        return channel_data[channel_names[0]] 
-
 
 def average_regions(ary, split_points):
     from numpy import asarray, empty, ndindex
@@ -94,6 +78,11 @@ class ImageProcessor:
 
         self.bbox_left = left
         self.bbox_right = right
+
+    def find_gaps_between_staves(self):
+
+        pass
+
 
     def get_stripes(self):
         """
