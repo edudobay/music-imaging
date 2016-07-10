@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-from imaging.core import *
 from imaging.core.page import center_on_page
 from imaging.core.image import get_channel_data, offset_image
 from imaging.core.signal import find_bbox, split_into_nonempty_areas

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from imaging.core import *
+from imaging.core.signal import *
 from imaging.core.units import *
 from imaging.core.geometry import *
 from imaging.core.page import *
@@ -182,6 +182,7 @@ def plot(size, theta, d):
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
+    import os
 
     parser = ArgumentParser()
     parser.add_argument('infile', metavar='FILE', nargs='+', help='input image file')
