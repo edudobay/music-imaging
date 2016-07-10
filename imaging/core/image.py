@@ -20,3 +20,26 @@ def get_channel_data(image: Image.Image, *channel_names: str, as_dict: bool = Fa
 def alpha_blend_over_background(image, background_color='white'):
     background = Image.new('RGBA', image.size, background_color)
     return Image.alpha_composite(background, image.convert('RGBA'))
+
+def offset_image(image, offset, *, image_mode=None, background_color='white'):
+    """
+    Return a copy of the given image offset by the given displacement.
+
+    offset -- a (x, y) pair. These can be floating and will be converted to
+    integers (using int())
+
+    image_mode -- mode to use for the new image. See `PIL.Image.new`.  If not
+    given, the same mode of the source image is assumed.
+
+    background_color -- background color to fill the unused pixels. See
+    `PIL.Image.new`.
+    """
+    x, y = offset
+    offset = int(x), int(y)
+
+    if image_mode is None:
+        image_mode = image.mode
+
+    board = Image.new(image_mode, image.size, background_color)
+    board.paste(image, offset)
+    return board
