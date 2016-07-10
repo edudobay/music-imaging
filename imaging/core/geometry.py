@@ -1,4 +1,9 @@
 def intersect(r1, theta1, r2, theta2):
+    """
+    Calculate the intersection point of two lines, each given by two
+    parameters: `r`, the least distance from the origin to the line, and
+    `theta`, the angle it makes with the x-axis.
+    """
     from numpy import sin, cos, matrix, array, sqrt
     NORM_TOLERANCE = 1e-7
 
