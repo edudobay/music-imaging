@@ -15,6 +15,7 @@ if __name__ == '__main__':
     parser.add_argument('infile', metavar='FILE', nargs='+', help='input image file')
     parser.add_argument('-O', metavar='DIR', default=None, dest='output_dir', help='destination directory')
     parser.add_argument('-c', '--crop', action='store_true', dest='crop', help='crop images to detected bbox')
+    parser.add_argument('-w', '--width', dest='page_width', help='set output page width (in pixels)')
     args = parser.parse_args()
 
     for infile in args.infile:
@@ -22,7 +23,9 @@ if __name__ == '__main__':
             print(infile)
             ip = ImageProcessor(im)
             ip.find_bbox()
-            ip.width = 2480
+            if args.page_width:
+                # TODO: Improve our interfaces so we don't set this directly
+                ip.width = int(args.page_width)
 
             images = ip.extract_stripes(ip.get_stripes(), crop=args.crop)
             
