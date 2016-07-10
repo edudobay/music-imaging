@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+from imaging.core import *
 from PIL import Image # type: ignore
 import numpy as np # type: ignore
 import math
@@ -44,75 +45,6 @@ def average_regions(ary, split_points):
         average[index] = ary[region].mean()
 
     return average
-
-class ImageProcessor:
-    def __init__(self, image: Image.Image) -> None:
-        self.image = image
-        self.width, self.height = image.size # type: int, int
-        self.bbox_left, self.bbox_right = 0, self.width
-        self.channels = get_image_channels(image)
-        self.channel_data = {} # type: Dict[str, np.ndarray]
-
-    def get_channel_data(self, *channel_names: str, as_dict: bool = False):
-        return get_channel_data(self.image, *channel_names, as_dict=as_dict)
-
-    def extract_stripe(self, top, bottom, *, crop=True):
-        # crop is ignored for now
-        cropped_width = self.bbox_right - self.bbox_left
-        new_x = (self.width - cropped_width) // 2
-        print('cropped_width: {} ({} -> {})'.format(cropped_width, self.bbox_left, self.bbox_right))
-        board = Image.new('RGBA', (self.width, bottom - top), 'white')
-        pasted = board.copy()
-        pasted.paste(self.image.crop(( self.bbox_left, top, self.bbox_right - 1, bottom - 1 )), (new_x, 0))
-        board = Image.alpha_composite(board, pasted)
-        return board.convert('LA')
-
-    def extract_stripes(self, stripes, *, crop=True):
-        return [self.extract_stripe(top, bottom, crop=crop) for (top, bottom) in stripes]
-
-    def average_regions(self, region_size):
-        white_bg = Image.new('RGBA', self.image.size, 'white')
-        blended = Image.alpha_composite(white_bg, self.image.convert('RGBA')).convert('LA')
-
-        im = 1 - get_channel_data(blended, 'L') / 255
-        sx, sy = region_size, region_size
-        grid_x = np.arange(0, self.width + sx, sx)
-        grid_y = np.arange(0, self.height + sy, sy)
-
-        regions = ( np.column_stack((grid_y[:-1], grid_y[1:])),
-                    np.column_stack((grid_x[:-1], grid_x[1:])), )
-        averages = average_regions(im, regions)
-        averages = medfilt(averages, 5)
-        return averages
-
-    def find_bbox(self):
-        region_size = math.ceil(min(self.width, self.height) / 200)
-        averages = self.average_regions(region_size)
-
-        max_per_column = averages.max(axis=0)
-        threshold = 0.03
-
-        left, right = np.array(np.nonzero(max_per_column > threshold)).flatten()[[1, -1]] * region_size
-        right += region_size # set right boundary to end of region
-
-        self.bbox_left = left
-        self.bbox_right = right
-
-    def get_stripes(self):
-        """
-        Return:
-            an array of pairs of y positions, where the first element in the pair
-            indicates the start of a non-blank area, and the second element
-            indicates the start of the following blank area (might point to the
-            first row beyond the bounding box)
-        """
-        alpha = self.get_channel_data('A')
-        max_alpha_per_row = alpha.max(axis=1)
-
-        non_blank_rows = np.array(max_alpha_per_row != 0, np.int)
-        transitions = np.ediff1d(np.concatenate([[0], non_blank_rows, [0]]))
-        transition_points = transitions.nonzero()[0].reshape((-1, 2))
-        return transition_points
 
 if __name__ == '__main__':
 

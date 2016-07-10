@@ -50,7 +50,8 @@ class ImageProcessor:
     def get_channel_data(self, *channel_names: str, as_dict: bool = False):
         return get_channel_data(self.image, *channel_names, as_dict=as_dict)
 
-    def extract_stripe(self, top, bottom):
+    def extract_stripe(self, top, bottom, *, crop=True):
+        # crop is ignored for now
         cropped_width = self.bbox_right - self.bbox_left
         new_x = (self.width - cropped_width) // 2
         print('cropped_width: {} ({} -> {})'.format(cropped_width, self.bbox_left, self.bbox_right))
@@ -60,8 +61,8 @@ class ImageProcessor:
         board = Image.alpha_composite(board, pasted)
         return board.convert('LA')
 
-    def extract_stripes(self, stripes):
-        return [self.extract_stripe(top, bottom) for (top, bottom) in stripes]
+    def extract_stripes(self, stripes, *, crop=True):
+        return [self.extract_stripe(top, bottom, crop=crop) for (top, bottom) in stripes]
 
     def average_regions(self, region_size):
         from numpy import arange, column_stack
