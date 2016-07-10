@@ -1,4 +1,5 @@
 from imaging.core.image import *
+from imaging.core.page import *
 import os
 from PIL import Image
 import numpy
@@ -34,18 +35,22 @@ class ImageProcessor:
     def get_channel_data(self, *channel_names: str, as_dict: bool = False):
         return get_channel_data(self.image, *channel_names, as_dict=as_dict)
 
-    def extract_stripe(self, top, bottom, *, crop=True):
-        # crop is ignored for now
-        cropped_width = self.bbox_right - self.bbox_left
-        new_x = (self.width - cropped_width) // 2
-        print('cropped_width: {} ({} -> {})'.format(cropped_width, self.bbox_left, self.bbox_right))
+    def extract_stripe(self, top, bottom, *, crop=False):
+        bbox_width = self.bbox_right - self.bbox_left
+        bbox_target_x, _ = center_on_page((bbox_width, 0), (self.width, 0))
+        x_offset = bbox_target_x - self.bbox_left
+
         board = Image.new('RGBA', (self.width, bottom - top), 'white')
         pasted = board.copy()
-        pasted.paste(self.image.crop(( self.bbox_left, top, self.bbox_right - 1, bottom - 1 )), (new_x, 0))
+        if crop:
+            pasted.paste(self.image.crop(( self.bbox_left, top, self.bbox_right, bottom )), (int(round(bbox_target_x)), 0))
+        else:
+            pasted.paste(self.image.crop(( 0, top, self.width, bottom )), (int(round(x_offset)), 0))
+
         board = Image.alpha_composite(board, pasted)
         return board.convert('LA')
 
-    def extract_stripes(self, stripes, *, crop=True):
+    def extract_stripes(self, stripes, *, crop=False):
         return [self.extract_stripe(top, bottom, crop=crop) for (top, bottom) in stripes]
 
     def average_regions(self, region_size):
