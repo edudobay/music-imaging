@@ -5,10 +5,6 @@ from imaging.core.image import get_channel_data, offset_image
 from imaging.core.signal import find_bbox, split_into_nonempty_areas
 
 from PIL import Image # type: ignore
-import numpy as np # type: ignore
-from argparse import *
-
-np.set_printoptions(threshold=np.nan)
 
 def get_black_level(image):
     return 1 - get_channel_data(image, 'L') / 255
@@ -36,6 +32,7 @@ def get_stripes(image):
 if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
+    from argparse import ArgumentParser
 
     parser = ArgumentParser()
     parser.add_argument('infile', metavar='FILE', nargs='+', help='input image file')

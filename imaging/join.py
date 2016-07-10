@@ -2,7 +2,6 @@
 import os
 import sys
 import re
-from argparse import *
 from PIL import Image
 
 class Distance:
@@ -106,6 +105,7 @@ class Joiner:
         return not self.current_page
 
 def main():
+    from argparse import ArgumentParser
     parser = ArgumentParser()
     parser.add_argument('infile', metavar='FILE', nargs='+', help='input image file')
     parser.add_argument('-O', metavar='DIR', dest='output_dir', help='destination directory')
