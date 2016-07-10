@@ -34,3 +34,41 @@ def length(v):
     from numpy import sum, sqrt
     return sqrt(sum(v ** 2))
 
+def perspective_transform_coeffs(pa, pb):
+    """
+    Compute the coefficients of a perspective transformation (as understood by
+    PIL) so that a set of four points on plane A get mapped to another set of
+    four points on plane B. Could be used as follows:
+
+    >>> from PIL import Image
+    >>> coeffs = perspective_transform_coeffs(pa, pb)
+    >>> image.transform(image_size, Image.PERSPECTIVE, coeffs, Image.BICUBIC)
+
+    The arguments must be sequences of 4 points with 2 coordinates each,
+    specifying the points that describe the mapping.
+
+    Algorithm posted by mmgp at <http://stackoverflow.com/a/14178717/302264>.
+    """
+    import numpy
+    matrix = []
+    for p1, p2 in zip(pa, pb):
+        matrix.append([p1[0], p1[1], 1, 0, 0, 0, -p2[0]*p1[0], -p2[0]*p1[1]])
+        matrix.append([0, 0, 0, p1[0], p1[1], 1, -p2[1]*p1[0], -p2[1]*p1[1]])
+
+    A = numpy.matrix(matrix, dtype=numpy.float)
+    B = numpy.array(pb).reshape(8)
+
+    res = numpy.dot(numpy.linalg.inv(A.T * A) * A.T, B)
+    return numpy.array(res).reshape(8)
+
+def polygon_edges(corners):
+    """
+    Given a sequence of points, return the vector differences between
+    consecutive points, including the vector from the last to the first point.
+    If the input is the sequence of vertices of a polygon, the result is the
+    sequence of the polygon's directed edges.
+    """
+    from numpy import diff, r_
+    sides = diff(r_[corners, [corners[0]]], axis=0)
+    return sides
+

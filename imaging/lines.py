@@ -34,24 +34,6 @@ def find_corners(horizontal_peaks, vertical_peaks):
     corners = array(corners).reshape((4, 2))
     return corners
 
-def find_sides(corners):
-    from numpy import diff, r_
-    sides = diff(r_[corners, [corners[0]]], axis=0)
-    return sides
-
-def find_coeffs(pa, pb):
-    import numpy
-    matrix = []
-    for p1, p2 in zip(pa, pb):
-        matrix.append([p1[0], p1[1], 1, 0, 0, 0, -p2[0]*p1[0], -p2[0]*p1[1]])
-        matrix.append([0, 0, 0, p1[0], p1[1], 1, -p2[1]*p1[0], -p2[1]*p1[1]])
-
-    A = numpy.matrix(matrix, dtype=numpy.float)
-    B = numpy.array(pb).reshape(8)
-
-    res = numpy.dot(numpy.linalg.inv(A.T * A) * A.T, B)
-    return numpy.array(res).reshape(8)
-
 def get_target_size(sides):
     from numpy import sqrt, cross
     total_area = (abs(cross(sides[0], sides[3])) + abs(cross(sides[1], sides[2]))) / 2
@@ -167,7 +149,7 @@ def process_image(im, out_filename):
     horizontal_peaks, vertical_peaks = hough_horizontal_and_vertical(data, threshold_deg=DEG_THRESHOLD)
     corners = find_corners(horizontal_peaks, vertical_peaks)
     source_centroid = mean(corners, axis=0)
-    sides = find_sides(corners)
+    sides = polygon_edges(corners)
 
     if DEBUG:
         print('Corners:')
@@ -178,7 +160,7 @@ def process_image(im, out_filename):
     target_size = get_target_size(sides)
     target_centroid_offset = array(target_size) / 2  # from top-left
     target_pos = source_centroid - target_centroid_offset + recenter(source_size, page_size)
-    coeffs = find_coeffs(find_target_corners(target_pos, target_size), corners)
+    coeffs = perspective_transform_coeffs(find_target_corners(target_pos, target_size), corners)
 
     board = Image.new("RGBA", tuple(page_size), (255, 255, 255, 255))
 
