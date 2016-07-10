@@ -7,16 +7,6 @@ import numpy
 import math
 
 class ImageProcessor:
-    def __init__(self, image: Image.Image) -> None:
-        self.image = image
-        self.width, self.height = image.size # type: int, int
-        self.bbox_left, self.bbox_right = 0, self.width
-        self.channels = get_image_channels(image)
-        self.channel_data = {}
-
-    def get_channel_data(self, *channel_names: str, as_dict: bool = False):
-        return get_channel_data(self.image, *channel_names, as_dict=as_dict)
-
     def extract_stripe(self, top, bottom, *, crop=False):
         bbox_width = self.bbox_right - self.bbox_left
         bbox_target_x, _ = center_on_page((bbox_width, 0), (self.width, 0))
@@ -34,11 +24,6 @@ class ImageProcessor:
 
     def extract_stripes(self, stripes, *, crop=False):
         return [self.extract_stripe(top, bottom, crop=crop) for (top, bottom) in stripes]
-
-    def average_regions(self, region_size):
-        blended = alpha_blend_over_background(self.image, 'white').convert('LA')
-        im = 1 - get_channel_data(blended, 'L') / 255
-        return average_over_rectangles(im, (region_size, region_size))
 
 def load_image(infile):
     im = Image.open(infile)

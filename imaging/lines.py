@@ -3,6 +3,7 @@ from imaging.core import *
 from imaging.core.units import *
 from imaging.core.geometry import *
 from imaging.core.page import *
+from imaging.core.image import *
 
 from skimage.transform import (hough_line, hough_line_peaks,
                                probabilistic_hough_line)
@@ -130,8 +131,7 @@ def hough_horizontal_and_vertical(image, *, threshold_deg):
 def process_image(im, out_filename):
     from numpy import array, linspace, max, mean, pi
     im = im.convert('LA')
-    ip = ImageProcessor(im)
-    data = ip.get_channel_data('L')
+    data = get_channel_data(im, 'L')
     data = 1 - data / 255
     DPI = 300
 

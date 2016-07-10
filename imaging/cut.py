@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 import os
 from imaging.core import *
+from imaging.core.image import get_channel_data
+from imaging.core.signal import find_bbox
+
 from PIL import Image # type: ignore
 import numpy as np # type: ignore
 from argparse import *
 
 np.set_printoptions(threshold=np.nan)
+
+def find_image_bbox(image):
+    blended = alpha_blend_over_background(image, 'white').convert('LA')
+    data = 1 - get_channel_data(blended, 'L') / 255
+    return find_bbox(image)
 
 if __name__ == '__main__':
 
