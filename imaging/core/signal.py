@@ -75,7 +75,7 @@ def find_bbox(ary, *,
               threshold = NONEMPTY_REGION_THRESHOLD,
               medfilt_kernel_size = DEFAULT_MEDFILT_KERNEL_SIZE):
     """
-    Detect an approximate bounding box of the image data in `ary` along the
+    Detect an approximate bounding box of the image data in `ary` across the
     dimension specified by `axis`.
 
     Return a (left, right) coordinate pair.
