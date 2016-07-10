@@ -17,3 +17,6 @@ def get_channel_data(image: Image.Image, *channel_names: str, as_dict: bool = Fa
     else:
         return channel_data[channel_names[0]] 
 
+def alpha_blend_over_background(image, background_color='white'):
+    background = Image.new('RGBA', image.size, background_color)
+    return Image.alpha_composite(background, image.convert('RGBA'))
