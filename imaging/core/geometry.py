@@ -68,7 +68,7 @@ def polygon_edges(corners):
     If the input is the sequence of vertices of a polygon, the result is the
     sequence of the polygon's directed edges.
     """
-    from numpy import diff, r_
-    sides = diff(r_[corners, [corners[0]]], axis=0)
+    from numpy import roll
+    sides = roll(corners, -1, axis=0) - corners
     return sides
 
