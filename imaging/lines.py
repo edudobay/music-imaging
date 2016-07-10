@@ -2,6 +2,7 @@
 from imaging.core import *
 from imaging.core.units import *
 from imaging.core.geometry import *
+from imaging.core.page import *
 
 from skimage.transform import (hough_line, hough_line_peaks,
                                probabilistic_hough_line)
@@ -47,14 +48,6 @@ def get_target_size(sides):
     target_width = mean_width * growth
     target_height = mean_height * growth
     return target_width, target_height
-
-def recenter(source_size, page_size):
-    page_width, page_height = page_size
-    source_width, source_height = source_size
-
-    source_x = (page_width - source_width) / 2
-    source_y = (page_height - source_height) / 2
-    return source_x, source_y
 
 def find_target_corners(target_pos, target_size):
     from numpy import array, asarray
@@ -159,7 +152,7 @@ def process_image(im, out_filename):
 
     target_size = get_target_size(sides)
     target_centroid_offset = array(target_size) / 2  # from top-left
-    target_pos = source_centroid - target_centroid_offset + recenter(source_size, page_size)
+    target_pos = source_centroid - target_centroid_offset + center_on_page(source_size, page_size)
     coeffs = perspective_transform_coeffs(find_target_corners(target_pos, target_size), corners)
 
     board = Image.new("RGBA", tuple(page_size), (255, 255, 255, 255))
