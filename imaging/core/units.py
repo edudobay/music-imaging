@@ -27,9 +27,13 @@ class Distance:
     def _parse(self, value):
         m = re.match(Distance.RE_ALL, value)
         if m is None:
-            raise ValueError("unrecognized value")
-
-        self._set(m.group(1), m.group(2))
+            m = re.match(Distance.RE_VALUE, value)
+            if m is None:
+                raise ValueError("unrecognized value")
+            else:
+                self._set(m.group(1), 'px')
+        else:
+            self._set(m.group(1), m.group(2))
 
     def _set(self, value, unit):
         self.value = float(value)
