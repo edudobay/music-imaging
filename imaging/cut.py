@@ -13,24 +13,27 @@ def get_black_level(image):
 def get_opacity(image):
     return get_channel_data(image, 'A') / 255
 
-def get_stripe(image, top, bottom):
-    return image.crop((0, top, image.width, bottom))
-
-def get_stripes(image, *, min_staff_height, min_area_gap):
+def get_stripes(image, *, min_staff_height, min_area_gap, page_crop_width=0):
     image = image.convert('LA')
     black = get_black_level(image)
     opacity = get_opacity(image)
 
     bbox_left, bbox_right = find_bbox(black, axis=0)
 
+    width, _ = image.size
+    if page_crop_width != 0:
+        width = int(round(page_crop_width))
+
     stripes = split_into_nonempty_areas(black, axis=1,
                                         discard_areas_shorter_than = min_staff_height,
                                         minimum_area_gap = min_area_gap)
 
-    bbox_target_x, _ = center_on_page((bbox_right - bbox_left, 0), image.size)
-    new_image = offset_image(image, (bbox_target_x - bbox_left, 0))
+    bbox_target_x, _ = center_on_page((bbox_right - bbox_left, 0), (width, 0))
+    x_offset = bbox_target_x - bbox_left
+    new_image = offset_image(image, (x_offset, 0))
+    print(bbox_left, bbox_target_x, x_offset, width)
 
-    return [get_stripe(new_image, top, bottom) for (top, bottom) in stripes]
+    return [image.crop((-x_offset, top, width - x_offset, bottom)) for (top, bottom) in stripes]
 
 if __name__ == '__main__':
 
@@ -43,19 +46,21 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--dpi', type=float, dest='input_dpi', help='set DPI of input image')
     parser.add_argument('-m', '--min-staff-height', type=Distance, dest='min_staff_height', help='minimum staff height to detect')
     parser.add_argument('-g', '--min-gap', type=Distance, dest='min_area_gap', help='minimum inter-staff gap height to detect')
+    parser.add_argument('-W', '--page-width', type=Distance, dest='page_crop_width', help='set output page width')
     args = parser.parse_args()
+
+    def get_logical(value):
+        return 0 if not value else value.get_logical(dpi=args.input_dpi)
 
     for infile in args.infile:
         with Image.open(infile) as im:
             print(infile)
-            min_staff_height = 0 if not args.min_staff_height else \
-                args.min_staff_height.get_logical(dpi=args.input_dpi)
-            min_area_gap = 0 if not args.min_area_gap else \
-                args.min_area_gap.get_logical(dpi=args.input_dpi)
             images = get_stripes(im,
-                                 min_staff_height = min_staff_height,
-                                 min_area_gap = min_area_gap)
-            
+                min_staff_height    = get_logical(args.min_staff_height),
+                min_area_gap        = get_logical(args.min_area_gap),
+                page_crop_width     = get_logical(args.page_crop_width),
+            )
+
             basename = os.path.splitext(os.path.basename(infile))[0] + '_%02d.png'
             dirname = os.path.dirname(infile) if args.output_dir is None else args.output_dir
             outfile = os.path.join(dirname, basename)
