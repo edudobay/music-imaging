@@ -85,7 +85,7 @@ def main():
     dpi = args.input_dpi
     MM = Distance(1, 'mm').get_logical(dpi)
     page_width  = args.page_width.get_logical(dpi)
-    page_height = args.page_width.get_logical(dpi)
+    page_height = args.page_height.get_logical(dpi)
     max_spacing = args.max_spacing.get_logical(dpi)
 
     joiner = Joiner(
