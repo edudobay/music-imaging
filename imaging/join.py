@@ -96,7 +96,8 @@ def main():
             )
 
     page_number = 1
-    joiner.set(margin_top = 0)
+    # when overriding the top margin for the first page:
+    # joiner.set(margin_top = 0)
 
     basename = args.format
     dirname = args.output_dir
