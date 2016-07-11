@@ -53,7 +53,7 @@ class Joiner:
         spare_height = self.page_height - self.get_size(self.current_page) 
         if spare_height < 0:
             print('warning: page contents exceeds page height by %d points' % (-spare_height), file=sys.stderr)
-        elif self.fill_page_height:
+        elif self.fill_page_height and len(self.current_page) > 1:
             spacing = spacing + spare_height / (len(self.current_page) - 1)
             if self.max_spacing is not None:
                 spacing = min(spacing, self.max_spacing)
