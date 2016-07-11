@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+from imaging.core.units import Distance
 from imaging.core.page import center_on_page
 from imaging.core.image import get_channel_data, offset_image
 from imaging.core.signal import find_bbox, split_into_nonempty_areas
@@ -15,14 +16,16 @@ def get_opacity(image):
 def get_stripe(image, top, bottom):
     return image.crop((0, top, image.width, bottom))
 
-def get_stripes(image):
+def get_stripes(image, *, min_staff_height, min_area_gap):
     image = image.convert('LA')
     black = get_black_level(image)
     opacity = get_opacity(image)
 
     bbox_left, bbox_right = find_bbox(black, axis=0)
 
-    stripes = split_into_nonempty_areas(opacity, axis=1)
+    stripes = split_into_nonempty_areas(black, axis=1,
+                                        discard_areas_shorter_than = min_staff_height,
+                                        minimum_area_gap = min_area_gap)
 
     bbox_target_x, _ = center_on_page((bbox_right - bbox_left, 0), image.size)
     new_image = offset_image(image, (bbox_target_x - bbox_left, 0))
@@ -37,14 +40,21 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('infile', metavar='FILE', nargs='+', help='input image file')
     parser.add_argument('-O', metavar='DIR', default=None, dest='output_dir', help='destination directory')
-    parser.add_argument('-c', '--crop', action='store_true', dest='crop', help='crop images to detected bbox')
-    parser.add_argument('-w', '--width', dest='page_width', help='set output page width (in pixels)')
+    parser.add_argument('-d', '--dpi', type=float, dest='input_dpi', help='set DPI of input image')
+    parser.add_argument('-m', '--min-staff-height', type=Distance, dest='min_staff_height', help='minimum staff height to detect')
+    parser.add_argument('-g', '--min-gap', type=Distance, dest='min_area_gap', help='minimum inter-staff gap height to detect')
     args = parser.parse_args()
 
     for infile in args.infile:
         with Image.open(infile) as im:
             print(infile)
-            images = get_stripes(im)
+            min_staff_height = 0 if not args.min_staff_height else \
+                args.min_staff_height.get_logical(dpi=args.input_dpi)
+            min_area_gap = 0 if not args.min_area_gap else \
+                args.min_area_gap.get_logical(dpi=args.input_dpi)
+            images = get_stripes(im,
+                                 min_staff_height = min_staff_height,
+                                 min_area_gap = min_area_gap)
             
             basename = os.path.splitext(os.path.basename(infile))[0] + '_%02d.png'
             dirname = os.path.dirname(infile) if args.output_dir is None else args.output_dir

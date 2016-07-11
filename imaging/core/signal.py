@@ -107,7 +107,9 @@ def find_bbox(ary, *,
 
     return (left, right)
 
-def split_into_nonempty_areas(ary, axis=1):
+def split_into_nonempty_areas(ary, axis=1, *,
+                              discard_areas_shorter_than = 0,
+                              minimum_area_gap = 0):
     """
     Find the split points between empty and nonempty areas of `ary`, where an
     empty area is one with only zeroes. Areas are either vertical (0) or
@@ -116,11 +118,43 @@ def split_into_nonempty_areas(ary, axis=1):
     Return an array of pairs of y positions, where the first element in the
     pair indicates the start of a non-blank area, and the second element
     indicates the start of the following blank area.
+
+    discard_areas_shorter_than -- if specified, areas shorter than this value
+    are discarded from the result set
+
+    minimum_area_gap -- minimum gap between areas for them to be considered as
+    two distinct areas (if not distinct, they are merged)
     """
-    from numpy import array, ediff1d, concatenate, int
+    from numpy import array, ediff1d, concatenate, roll, infty, int
     max_along_axis = ary.max(axis=axis)
 
     non_blank_rows = array(max_along_axis != 0, int)
     transitions = ediff1d(concatenate([[0], non_blank_rows, [0]]))
     transition_points = transitions.nonzero()[0].reshape((-1, 2))
+
+    area_start = transition_points[:, 0]
+    area_end = transition_points[:, 1]
+
+    if discard_areas_shorter_than > 0:
+        area_lengths = area_end - area_start
+
+        large_areas = area_lengths >= discard_areas_shorter_than
+        small_areas = ~large_areas
+
+        if minimum_area_gap > 0:
+            gap_to_next = concatenate([area_start[1:] - area_end[:-1], [infty]])
+            gap_to_previous = roll(gap_to_next, 1) # has +infty in first index
+
+            next_is_large = roll(large_areas, -1)
+            previous_is_large = roll(large_areas, 1)
+
+            merge_with_next = small_areas & next_is_large & (gap_to_next < minimum_area_gap)
+            merge_with_previous = small_areas & previous_is_large & (gap_to_previous < minimum_area_gap)
+
+            # do the merge. Unused areas will be discarded in the next step
+            area_start[roll(merge_with_next, 1)] = area_start[merge_with_next]
+            area_end[roll(merge_with_previous, -1)] = area_end[merge_with_previous]
+
+        transition_points = transition_points[large_areas]
+
     return transition_points
