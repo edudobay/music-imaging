@@ -8,8 +8,8 @@ from imaging.core.units import Distance
 class Joiner:
     def __init__(self, *, page_width, page_height, margin_top, margin_bottom, spacing,
             fill_page_height = False, max_spacing = None):
-        self.page_width = page_width
-        self.page_height = page_height
+        self.page_width = int(page_width)
+        self.page_height = int(page_height)
         self.margin_top = margin_top
         self.margin_bottom = margin_bottom
         self.spacing = spacing
@@ -60,7 +60,7 @@ class Joiner:
 
         for item in self.current_page:
             _, item_height = item.size
-            page.paste(item, (left, round(top)))
+            page.paste(item, (left, int(round(top))))
             top += item_height + spacing
 
         page = Image.alpha_composite(background, page)
