@@ -40,8 +40,10 @@ class Distance:
         self.unit = Distance.UNITS[unit]
 
     def get_logical(self, dpi=None):
-        unit_inches, unit_type = self.unit
+        unit_value, unit_type = self.unit
         if dpi is None and unit_type != 'logical':
             raise ValueError("dpi not provided for non-logical unit")
-        return self.value * unit_inches * dpi
+        if unit_type == 'physical':
+            unit_value *= dpi
+        return self.value * unit_value
 
