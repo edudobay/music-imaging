@@ -76,23 +76,28 @@ def main():
     parser.add_argument('-O', metavar='DIR', dest='output_dir', help='destination directory')
     parser.add_argument('-f', dest='format', default='collage_%02d.png', help='format for naming output files')
     parser.add_argument('-e', dest='fill_page_height', action='store_true', help='fill all available vertical space')
-    parser.add_argument('-S', dest='max_spacing', type=Distance, help='maximum spacing between systems')
+    parser.add_argument('-s', '--spacing', type=Distance, dest='spacing', default=Distance('8mm'), help='set default spacing between systems')
+    parser.add_argument('-S', '--max-spacing', type=Distance, dest='max_spacing', help='set maximum spacing between systems')
     parser.add_argument('-d', '--dpi', type=float, dest='input_dpi', help='set DPI of input image')
     parser.add_argument('-W', '--width', type=Distance, dest='page_width', help='set output page width')
     parser.add_argument('-H', '--height', type=Distance, dest='page_height', help='set output page height')
+    parser.add_argument('-mt', '--margin-top', type=Distance, dest='margin_top', default=Distance('8mm'), help='set page top margin')
+    parser.add_argument('-mb', '--margin-bottom', type=Distance, dest='margin_bottom', default=Distance('15mm'), help='set page bottom margin')
     args = parser.parse_args()
 
     dpi = args.input_dpi
-    MM = Distance(1, 'mm').get_logical(dpi)
-    page_width  = args.page_width.get_logical(dpi)
-    page_height = args.page_height.get_logical(dpi)
-    max_spacing = args.max_spacing.get_logical(dpi)
+
+    def get_logical(value):
+        return 0 if value is None else value.get_logical(dpi=args.input_dpi)
 
     joiner = Joiner(
-            page_width = page_width, page_height = page_height,
-            margin_top = 8*MM, margin_bottom = 15*MM, spacing = 8*MM,
-            fill_page_height = args.fill_page_height,
-            max_spacing = max_spacing,
+            page_width          = get_logical(args.page_width),
+            page_height         = get_logical(args.page_height),
+            margin_top          = get_logical(args.margin_top),
+            margin_bottom       = get_logical(args.margin_bottom),
+            spacing             = get_logical(args.spacing),
+            max_spacing         = get_logical(args.max_spacing),
+            fill_page_height    = args.fill_page_height,
             )
 
     page_number = 1
