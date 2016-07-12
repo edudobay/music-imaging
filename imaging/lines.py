@@ -120,7 +120,7 @@ def hough_horizontal_and_vertical(image, *, threshold_deg):
         print(vertical_peaks[1][order])
         print(vertical_peaks[2][order])
 
-        if False:
+        if DEBUG:
             h, w = image.shape
             plot((w, h),
                  r_[horizontal_peaks[1], vertical_peaks[1]],
