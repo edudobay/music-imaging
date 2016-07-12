@@ -38,6 +38,10 @@ class Distance:
     def _set(self, value, unit):
         self.value = float(value)
         self.unit = Distance.UNITS[unit]
+        self.unit_name = unit
+
+    def __repr__(self):
+        return '<Distance: {value} {unit}>'.format(value=self.value, unit=self.unit_name)
 
     def get_logical(self, dpi=None):
         unit_value, unit_type = self.unit
