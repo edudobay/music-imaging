@@ -128,7 +128,7 @@ def hough_horizontal_and_vertical(image, *, threshold_deg):
 
     return horizontal_peaks, vertical_peaks
 
-def process_image(im, out_filename):
+def process_image(im, out_filename, *, corners=None):
     from numpy import array, linspace, max, mean, pi
     im = im.convert('LA')
     data = get_channel_data(im, 'L')
@@ -139,8 +139,9 @@ def process_image(im, out_filename):
     source_size = source_width, source_height
     page_size = (cm2points(array([21.0, 29.7]), DPI) * 1.1).astype(int)
 
-    horizontal_peaks, vertical_peaks = hough_horizontal_and_vertical(data, threshold_deg=DEG_THRESHOLD)
-    corners = find_corners(horizontal_peaks, vertical_peaks)
+    if corners is None:
+        horizontal_peaks, vertical_peaks = hough_horizontal_and_vertical(data, threshold_deg=DEG_THRESHOLD)
+        corners = find_corners(horizontal_peaks, vertical_peaks)
     source_centroid = mean(corners, axis=0)
     sides = polygon_edges(corners)
 
@@ -188,10 +189,14 @@ if __name__ == '__main__':
     parser.add_argument('infile', metavar='FILE', nargs='+', help='input image file')
     parser.add_argument('-O', metavar='DIR', default=None, dest='output_dir', help='destination directory')
     parser.add_argument('-d', action='store_true', dest='debug')
+    parser.add_argument('-c', dest='corners', help='a sequence of x,y pairs separated by spaces')
     args = parser.parse_args()
 
     if args.debug:
         DEBUG = True
+
+    corners = None if not args.corners else \
+        [tuple(int(val) for val in point.split(',')) for point in args.corners.split()]
 
     for infile in args.infile:
         with Image.open(infile) as im:
@@ -200,5 +205,5 @@ if __name__ == '__main__':
             out_filename = os.path.join(out_dirname, out_basename)
 
             print(infile, '=>', out_filename)
-            process_image(im, out_filename)
+            process_image(im, out_filename, corners=corners)
 
