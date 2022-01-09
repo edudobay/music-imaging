@@ -181,7 +181,9 @@ def plot(size, theta, d):
 
     plt.savefig('debug.png', dpi=200)
 
-if __name__ == '__main__':
+
+def main():
+    global DEBUG
     from argparse import ArgumentParser
     import os
 
@@ -207,3 +209,5 @@ if __name__ == '__main__':
             print(infile, '=>', out_filename)
             process_image(im, out_filename, corners=corners)
 
+if __name__ == '__main__':
+    main()

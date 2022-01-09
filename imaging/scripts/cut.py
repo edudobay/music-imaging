@@ -35,9 +35,7 @@ def get_stripes(image, *, min_staff_height, min_area_gap, page_crop_width=0):
 
     return [image.crop((-x_offset, top, width - x_offset, bottom)) for (top, bottom) in stripes]
 
-if __name__ == '__main__':
-
-    import matplotlib.pyplot as plt
+def main():
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
@@ -67,3 +65,5 @@ if __name__ == '__main__':
             for i, image in enumerate(images):
                 image.save(outfile % i)
 
+if __name__ == '__main__':
+    main()
