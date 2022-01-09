@@ -6,12 +6,14 @@ from PIL import Image
 from imaging.core.units import Distance
 
 class Joiner:
-    def __init__(self, *, page_width, page_height, margin_top, margin_bottom, spacing,
+    def __init__(self, *, page_width, page_height, margin_top, margin_bottom, margin_left, margin_right, spacing,
             fill_page_height = False, max_spacing = None):
         self.page_width = int(page_width)
         self.page_height = int(page_height)
         self.margin_top = margin_top
         self.margin_bottom = margin_bottom
+        self.margin_left = margin_left
+        self.margin_right = margin_right # TODO: Unused
         self.spacing = spacing
         self.fill_page_height = fill_page_height
         self.max_spacing = max_spacing
@@ -47,7 +49,7 @@ class Joiner:
         background = page.copy()
 
         top = self._margin_top()
-        left = 0
+        left = int(round(self.margin_left))
 
         spacing = self.spacing
         spare_height = self.page_height - self.get_size(self.current_page) 
@@ -83,18 +85,22 @@ def main():
     parser.add_argument('-H', '--height', type=Distance, dest='page_height', help='set output page height')
     parser.add_argument('-mt', '--margin-top', type=Distance, dest='margin_top', default=Distance('8mm'), help='set page top margin')
     parser.add_argument('-mb', '--margin-bottom', type=Distance, dest='margin_bottom', default=Distance('15mm'), help='set page bottom margin')
+    parser.add_argument('-ml', '--margin-left', type=Distance, dest='margin_left', default=Distance('0mm'), help='set page left margin')
+    parser.add_argument('-mr', '--margin-right', type=Distance, dest='margin_right', default=Distance('0mm'), help='set page right margin')
     args = parser.parse_args()
 
     dpi = args.input_dpi
 
     def get_logical(value):
-        return 0 if value is None else value.get_logical(dpi=args.input_dpi)
+        return None if value is None else value.get_logical(dpi=args.input_dpi)
 
     joiner = Joiner(
             page_width          = get_logical(args.page_width),
             page_height         = get_logical(args.page_height),
             margin_top          = get_logical(args.margin_top),
             margin_bottom       = get_logical(args.margin_bottom),
+            margin_left         = get_logical(args.margin_left),
+            margin_right        = get_logical(args.margin_right),
             spacing             = get_logical(args.spacing),
             max_spacing         = get_logical(args.max_spacing),
             fill_page_height    = args.fill_page_height,
