@@ -151,9 +151,20 @@ def split_into_nonempty_areas(ary, axis=1, *,
             merge_with_next = small_areas & next_is_large & (gap_to_next < minimum_area_gap)
             merge_with_previous = small_areas & previous_is_large & (gap_to_previous < minimum_area_gap)
 
+            #print('transition_points', transition_points)
+            #print('area_lengths', area_lengths)
+            #print('large_areas', large_areas)
+            #print('merge_with_next', merge_with_next)
+            #print('merge_with_previous', merge_with_previous)
+            #print('gap_to_next', gap_to_next)
+            #print('gap_to_previous', gap_to_previous)
+
             # do the merge. Unused areas will be discarded in the next step
             area_start[roll(merge_with_next, 1)] = area_start[merge_with_next]
             area_end[roll(merge_with_previous, -1)] = area_end[merge_with_previous]
+
+            #print('area_start', area_start)
+            #print('area_end', area_end)
 
         transition_points = transition_points[large_areas]
 
