@@ -130,16 +130,15 @@ def hough_horizontal_and_vertical(image, *, threshold_deg, filename=None):
 
     return horizontal_peaks, vertical_peaks
 
-def process_image(im, out_filename, *, corners=None):
+def process_image(im, out_filename, *, dpi=300, corners=None):
     from numpy import array, linspace, max, mean, pi
     im = im.convert('LA')
     data = get_channel_data(im, 'L')
     data = 1 - data / 255
-    DPI = 300
 
     source_height, source_width = data.shape
     source_size = source_width, source_height
-    page_size = (cm2points(array([21.0, 29.7]), DPI) * 1.1).astype(int)
+    page_size = (cm2points(array([21.0, 29.7]), dpi) * 1.1).astype(int)
 
     if corners is None:
         horizontal_peaks, vertical_peaks = hough_horizontal_and_vertical(data, threshold_deg=DEG_THRESHOLD, filename=out_filename)
@@ -203,7 +202,8 @@ def main():
     parser = ArgumentParser()
     parser.add_argument('infile', metavar='FILE', nargs='+', help='input image file')
     parser.add_argument('-O', metavar='DIR', default=None, dest='output_dir', help='destination directory')
-    parser.add_argument('-d', action='store_true', dest='debug')
+    parser.add_argument('-d', '--debug', action='store_true', dest='debug')
+    parser.add_argument('--dpi', type=int, default=300)
     parser.add_argument('-c', dest='corners', help='a sequence of x,y pairs separated by spaces')
     args = parser.parse_args()
 
@@ -220,7 +220,7 @@ def main():
             out_filename = os.path.join(out_dirname, out_basename)
 
             print(infile, '=>', out_filename)
-            process_image(im, out_filename, corners=corners)
+            process_image(im, out_filename, dpi=args.dpi, corners=corners)
 
 if __name__ == '__main__':
     main()
