@@ -8,6 +8,7 @@ from imaging.core.image import *
 from skimage.transform import (hough_line, hough_line_peaks,
                                probabilistic_hough_line)
 import numpy
+import itertools
 
 DEG_THRESHOLD = 7.5
 
@@ -67,7 +68,7 @@ def find_hough_line_peaks(image, angles, *, min_distance=10, threshold_fraction=
         threshold = threshold_fraction * max(h))
     return peak_h, peak_theta, peak_d
 
-def hough_horizontal_and_vertical(image, *, threshold_deg):
+def hough_horizontal_and_vertical(image, *, threshold_deg, filename=None):
     from numpy import deg2rad, pi, linspace
     angle_delta = deg2rad(threshold_deg)
     angles = linspace(-angle_delta, angle_delta, 100)
@@ -124,7 +125,8 @@ def hough_horizontal_and_vertical(image, *, threshold_deg):
             h, w = image.shape
             plot((w, h),
                  r_[horizontal_peaks[1], vertical_peaks[1]],
-                 r_[horizontal_peaks[2], vertical_peaks[2]])
+                 r_[horizontal_peaks[2], vertical_peaks[2]],
+                 filename=filename)
 
     return horizontal_peaks, vertical_peaks
 
@@ -140,7 +142,7 @@ def process_image(im, out_filename, *, corners=None):
     page_size = (cm2points(array([21.0, 29.7]), DPI) * 1.1).astype(int)
 
     if corners is None:
-        horizontal_peaks, vertical_peaks = hough_horizontal_and_vertical(data, threshold_deg=DEG_THRESHOLD)
+        horizontal_peaks, vertical_peaks = hough_horizontal_and_vertical(data, threshold_deg=DEG_THRESHOLD, filename=out_filename)
         corners = find_corners(horizontal_peaks, vertical_peaks)
     source_centroid = mean(corners, axis=0)
     sides = polygon_edges(corners)
@@ -163,9 +165,17 @@ def process_image(im, out_filename, *, corners=None):
 
     Image.alpha_composite(board, transformed).convert("LA").save(out_filename)
 
-def plot(size, theta, d):
-    import matplotlib.pyplot as plt
+plot_counter = itertools.count(1)
+
+def plot(size, theta, d, *, filename=None):
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        return
     from numpy import cos, sin
+    from os.path import basename, splitext
+    from time import time
+
     col1, row1 = size
     plt.figure(figsize=(30, 18))
 
@@ -179,7 +189,10 @@ def plot(size, theta, d):
     plt.gca().invert_yaxis()
     plt.axes().set_aspect('equal', 'box')
 
-    plt.savefig('debug.png', dpi=200)
+    name = '{}-{:04d}'.format(int(time()), next(plot_counter)) if filename is None \
+            else splitext(basename(filename))[0]
+    plt.savefig('debug-{}.png'.format(name), dpi=200)
+    plt.close()
 
 
 def main():
