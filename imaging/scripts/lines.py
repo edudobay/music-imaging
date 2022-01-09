@@ -154,8 +154,18 @@ def process_image(im, out_filename, *, dpi=300, corners=None):
 
     target_size = get_target_size(sides)
     target_centroid_offset = array(target_size) / 2  # from top-left
-    target_pos = source_centroid - target_centroid_offset + center_on_page(source_size, page_size)
-    coeffs = perspective_transform_coeffs(find_target_corners(target_pos, target_size), corners)
+    target_pos = center_on_page(target_size, page_size)
+    target_corners = find_target_corners(target_pos, target_size)
+    coeffs = perspective_transform_coeffs(target_corners, corners)
+
+    if DEBUG:
+        print('Page size:', page_size)
+        print('Source size:', source_size)
+        print('Target size:', target_size)
+        print('Source centroid:', source_centroid)
+        print('Target centroid offset:', target_centroid_offset)
+        print('Target position:', target_pos)
+        print('Target corners:', target_corners, sep='\n')
 
     board = Image.new("RGBA", tuple(page_size), (255, 255, 255, 255))
 
