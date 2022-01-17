@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+from pathlib import Path
+from typing import Optional
+
 from imaging.core.signal import *
 from imaging.core.units import *
 from imaging.core.geometry import *
@@ -68,7 +71,7 @@ def find_hough_line_peaks(image, angles, *, min_distance=10, threshold_fraction=
         threshold = threshold_fraction * max(h))
     return peak_h, peak_theta, peak_d
 
-def hough_horizontal_and_vertical(image, *, threshold_deg, filename=None):
+def hough_horizontal_and_vertical(image, *, threshold_deg, filename: Optional[Path] = None):
     from numpy import deg2rad, pi, linspace
     angle_delta = deg2rad(threshold_deg)
     angles = linspace(-angle_delta, angle_delta, 100)
@@ -130,7 +133,7 @@ def hough_horizontal_and_vertical(image, *, threshold_deg, filename=None):
 
     return horizontal_peaks, vertical_peaks
 
-def process_image(im, out_filename, *, dpi=300, corners=None):
+def process_image(im, out_filename: Path, *, dpi=300, corners=None):
     from numpy import array, linspace, max, mean, pi
     im = im.convert('LA')
     data = get_channel_data(im, 'L')
@@ -176,13 +179,12 @@ def process_image(im, out_filename, *, dpi=300, corners=None):
 
 plot_counter = itertools.count(1)
 
-def plot(size, theta, d, *, filename=None):
+def plot(size, theta, d, *, filename: Optional[Path] = None):
     try:
         import matplotlib.pyplot as plt
     except ImportError:
         return
     from numpy import cos, sin
-    from os.path import basename, splitext
     from time import time
 
     col1, row1 = size
@@ -199,8 +201,9 @@ def plot(size, theta, d, *, filename=None):
     plt.axes().set_aspect('equal', 'box')
 
     name = '{}-{:04d}'.format(int(time()), next(plot_counter)) if filename is None \
-            else splitext(basename(filename))[0]
-    plt.savefig('debug-{}.png'.format(name), dpi=200)
+            else filename.stem
+    output = filename.with_stem(f'debug-{name}')
+    plt.savefig(output, dpi=200)
     plt.close()
 
 
@@ -227,7 +230,7 @@ def main():
         with Image.open(infile) as im:
             out_basename = os.path.splitext(os.path.basename(infile))[0] + '.png'
             out_dirname = args.output_dir
-            out_filename = os.path.join(out_dirname, out_basename)
+            out_filename = Path(out_dirname, out_basename)
 
             print(infile, '=>', out_filename)
             process_image(im, out_filename, dpi=args.dpi, corners=corners)
