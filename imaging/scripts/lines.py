@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import itertools
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -13,6 +14,13 @@ from imaging.core.units import *
 DEG_THRESHOLD = 7.5
 
 DEBUG = False
+
+
+@dataclass
+class Context:
+    dpi: int
+    debug_dpi: int
+
 
 def find_corners(horizontal_peaks, vertical_peaks):
     from numpy import array, abs
@@ -68,7 +76,7 @@ def find_hough_line_peaks(image, angles, *, min_distance=10, threshold_fraction=
         threshold = threshold_fraction * max(h))
     return peak_h, peak_theta, peak_d
 
-def hough_horizontal_and_vertical(image, *, threshold_deg, filename: Optional[Path] = None):
+def hough_horizontal_and_vertical(image, *, threshold_deg, filename: Optional[Path] = None, context: Context):
     from numpy import deg2rad, pi, linspace
     angle_delta = deg2rad(threshold_deg)
     angles = linspace(-angle_delta, angle_delta, 100)
@@ -126,11 +134,13 @@ def hough_horizontal_and_vertical(image, *, threshold_deg, filename: Optional[Pa
             plot((w, h),
                  r_[horizontal_peaks[1], vertical_peaks[1]],
                  r_[horizontal_peaks[2], vertical_peaks[2]],
-                 filename=filename)
+                 filename=filename,
+                 dpi=context.debug_dpi,
+             )
 
     return horizontal_peaks, vertical_peaks
 
-def process_image(im, out_filename: Path, *, dpi=300, corners=None):
+def process_image(im, out_filename: Path, *, corners=None, context: Context):
     from numpy import array, mean
     im = im.convert('LA')
     data = get_channel_data(im, 'L')
@@ -138,10 +148,10 @@ def process_image(im, out_filename: Path, *, dpi=300, corners=None):
 
     source_height, source_width = data.shape
     source_size = source_width, source_height
-    page_size = (cm2points(array([21.0, 29.7]), dpi) * 1.1).astype(int)
+    page_size = (cm2points(array([21.0, 29.7]), context.dpi) * 1.1).astype(int)
 
     if corners is None:
-        horizontal_peaks, vertical_peaks = hough_horizontal_and_vertical(data, threshold_deg=DEG_THRESHOLD, filename=out_filename)
+        horizontal_peaks, vertical_peaks = hough_horizontal_and_vertical(data, threshold_deg=DEG_THRESHOLD, filename=out_filename, context=context)
         corners = find_corners(horizontal_peaks, vertical_peaks)
     source_centroid = mean(corners, axis=0)
     sides = polygon_edges(corners)
@@ -176,7 +186,7 @@ def process_image(im, out_filename: Path, *, dpi=300, corners=None):
 
 plot_counter = itertools.count(1)
 
-def plot(size, theta, d, *, filename: Optional[Path] = None):
+def plot(size, theta, d, *, filename: Optional[Path] = None, dpi: int = 75):
     try:
         import matplotlib.pyplot as plt
     except ImportError:
@@ -200,7 +210,7 @@ def plot(size, theta, d, *, filename: Optional[Path] = None):
     name = '{}-{:04d}'.format(int(time()), next(plot_counter)) if filename is None \
             else filename.stem
     output = filename.with_stem(f'debug-{name}')
-    plt.savefig(output, dpi=200)
+    plt.savefig(output, dpi=dpi)
     plt.close()
 
 
@@ -213,7 +223,8 @@ def main():
     parser.add_argument('infile', metavar='FILE', nargs='+', help='input image file')
     parser.add_argument('-O', metavar='DIR', default=None, dest='output_dir', help='destination directory')
     parser.add_argument('-d', '--debug', action='store_true', dest='debug')
-    parser.add_argument('--dpi', type=int, default=300)
+    parser.add_argument('--dpi', type=int, default=300, help='resolution for input and output images')
+    parser.add_argument('--debug-dpi', type=int, default=75, help='resolution for debug plots (default: %(default)s)')
     parser.add_argument('-c', dest='corners', help='a sequence of x,y pairs separated by spaces')
     args = parser.parse_args()
 
@@ -223,6 +234,8 @@ def main():
     corners = None if not args.corners else \
         [tuple(int(val) for val in point.split(',')) for point in args.corners.split()]
 
+    context = Context(dpi=args.dpi, debug_dpi=args.debug_dpi)
+
     for infile in args.infile:
         with Image.open(infile) as im:
             out_basename = os.path.splitext(os.path.basename(infile))[0] + '.png'
@@ -230,7 +243,7 @@ def main():
             out_filename = Path(out_dirname, out_basename)
 
             print(infile, '=>', out_filename)
-            process_image(im, out_filename, dpi=args.dpi, corners=corners)
+            process_image(im, out_filename, corners=corners, context=context)
 
 if __name__ == '__main__':
     main()
