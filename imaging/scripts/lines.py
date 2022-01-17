@@ -1,24 +1,21 @@
 #!/usr/bin/env python3
+import itertools
 from pathlib import Path
 from typing import Optional
 
-from imaging.core.signal import *
-from imaging.core.units import *
-from imaging.core.geometry import *
-from imaging.core.page import *
-from imaging.core.image import *
+from skimage.transform import (hough_line, hough_line_peaks)
 
-from skimage.transform import (hough_line, hough_line_peaks,
-                               probabilistic_hough_line)
-import numpy
-import itertools
+from imaging.core.geometry import *
+from imaging.core.image import *
+from imaging.core.page import *
+from imaging.core.units import *
 
 DEG_THRESHOLD = 7.5
 
 DEBUG = False
 
 def find_corners(horizontal_peaks, vertical_peaks):
-    from numpy import array, rad2deg, abs
+    from numpy import array, abs
 
     _, horiz_theta, horiz_d = horizontal_peaks
     _, vert_theta, vert_d = vertical_peaks
@@ -134,7 +131,7 @@ def hough_horizontal_and_vertical(image, *, threshold_deg, filename: Optional[Pa
     return horizontal_peaks, vertical_peaks
 
 def process_image(im, out_filename: Path, *, dpi=300, corners=None):
-    from numpy import array, linspace, max, mean, pi
+    from numpy import array, mean
     im = im.convert('LA')
     data = get_channel_data(im, 'L')
     data = 1 - data / 255
