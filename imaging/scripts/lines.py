@@ -67,42 +67,54 @@ def find_target_corners(target_pos, target_size):
         [target_width, target_height], [0, target_height] ])
     return target_pos + corners
 
+
 def find_hough_line_peaks(image, angles, *, min_distance=10, threshold_fraction=0.5):
     from numpy import max
     h, theta, d = hough_line(image, angles)
     peak_h, peak_theta, peak_d = hough_line_peaks(
         h, theta, d,
-        min_distance = min_distance,
-        threshold = threshold_fraction * max(h))
+        min_distance = min_distance, # Minimum distance separating lines
+        threshold = threshold_fraction * max(h), # Minimum intensity of peaks
+    )
     return peak_h, peak_theta, peak_d
+
+
+def find_peaks(image, angles):
+    MIN_DIST_AMPLITUDE = min(*image.shape) * 0.50  # Half of the shortest image dimension
+
+    def good_enough(peaks):
+        _, _, dist = peaks
+        if len(dist) < 2: return False
+        elif (dist.max() - dist.min()) < MIN_DIST_AMPLITUDE: return False
+        else: return True
+
+    threshold_fraction = 0.95
+    MAX_TRIES = 7
+    tries = 0
+    while True:
+        if DEBUG:
+            print('trying with threshold_fraction =', threshold_fraction)
+        peaks = find_hough_line_peaks(image, angles, threshold_fraction = threshold_fraction)
+        if good_enough(peaks):
+            return peaks
+        elif tries > MAX_TRIES:
+            raise RuntimeError("maximum iterations exceeded")
+
+        tries += 1
+        threshold_fraction *= 0.9
+
 
 def hough_horizontal_and_vertical(image, *, threshold_deg, filename: Optional[Path] = None, context: Context):
     from numpy import deg2rad, pi, linspace
+
+    # Possible angles in which we look for straight lines.
+    # The range [-threshold, threshold] is divided evenly into `num_samples` pieces.
+    # The threshold represents the maximum angle for a rotated image to be detectable.
+    # These angles can be interpreted as relative to the horizontal axis or to the vertical axis.
+    # Both searches are made using the same angles.
     angle_delta = deg2rad(threshold_deg)
-    angles = linspace(-angle_delta, angle_delta, 100)
-
-    def find_peaks(image, angles):
-        MIN_DIST_AMPLITUDE = min(*image.shape) * 0.50
-        def good_enough(peaks):
-            _, _, dist = peaks
-            if len(dist) < 2: return False
-            elif (dist.max() - dist.min()) < MIN_DIST_AMPLITUDE: return False
-            else: return True
-
-        threshold_fraction = 0.95
-        MAX_TRIES = 7
-        tries = 0
-        while True:
-            if DEBUG:
-                print('trying with threshold_fraction =', threshold_fraction)
-            peaks = find_hough_line_peaks(image, angles, threshold_fraction = threshold_fraction)
-            if good_enough(peaks):
-                return peaks
-            elif tries > MAX_TRIES:
-                raise RuntimeError("maximum iterations exceeded")
-                
-            tries += 1
-            threshold_fraction *= 0.9
+    num_samples = 100
+    angles = linspace(-angle_delta, angle_delta, num_samples)
 
     horizontal_peaks = find_hough_line_peaks(image, angles + pi/2)
     vertical_peaks = find_peaks(image, angles)
