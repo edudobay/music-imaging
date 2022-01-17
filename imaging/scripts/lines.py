@@ -16,10 +16,19 @@ DEG_THRESHOLD = 7.5
 DEBUG = False
 
 
+class AlgorithmDefaults:
+    # In some cases, lower thresholds can help detecting weaker lines.
+    # For now, I tune this manually after inspecting the results.
+    THRESHOLD_START = 0.95
+    THRESHOLD_SHRINK = 0.9
+
+
 @dataclass
 class Context:
     dpi: int
     debug_dpi: int
+    vertical_threshold_start: float
+    vertical_threshold_shrink: float
 
 
 def find_corners(horizontal_peaks, vertical_peaks):
@@ -79,7 +88,7 @@ def find_hough_line_peaks(image, angles, *, min_distance=10, threshold_fraction=
     return peak_h, peak_theta, peak_d
 
 
-def find_peaks(image, angles):
+def find_peaks(image, angles, context: Context):
     MIN_DIST_AMPLITUDE = min(*image.shape) * 0.50  # Half of the shortest image dimension
 
     def good_enough(peaks):
@@ -88,9 +97,9 @@ def find_peaks(image, angles):
         elif (dist.max() - dist.min()) < MIN_DIST_AMPLITUDE: return False
         else: return True
 
-    threshold_fraction = 0.95
     MAX_TRIES = 7
     tries = 0
+    threshold_fraction = context.vertical_threshold_start
     while True:
         if DEBUG:
             print('trying with threshold_fraction =', threshold_fraction)
@@ -101,7 +110,7 @@ def find_peaks(image, angles):
             raise RuntimeError("maximum iterations exceeded")
 
         tries += 1
-        threshold_fraction *= 0.9
+        threshold_fraction *= context.vertical_threshold_shrink
 
 
 def hough_horizontal_and_vertical(image, *, threshold_deg, filename: Optional[Path] = None, context: Context):
@@ -117,7 +126,7 @@ def hough_horizontal_and_vertical(image, *, threshold_deg, filename: Optional[Pa
     angles = linspace(-angle_delta, angle_delta, num_samples)
 
     horizontal_peaks = find_hough_line_peaks(image, angles + pi/2)
-    vertical_peaks = find_peaks(image, angles)
+    vertical_peaks = find_peaks(image, angles, context=context)
 
     if DEBUG:
         def max_deviation(ary):
@@ -239,6 +248,8 @@ def main():
     parser.add_argument('--dpi', type=int, default=300, help='resolution for input and output images')
     parser.add_argument('--debug-dpi', type=int, default=75, help='resolution for debug plots (default: %(default)s)')
     parser.add_argument('-c', dest='corners', help='a sequence of x,y pairs separated by spaces')
+    parser.add_argument('--vertical-threshold-shrink', type=float, default=AlgorithmDefaults.THRESHOLD_SHRINK)
+    parser.add_argument('--vertical-threshold-start', type=float, default=AlgorithmDefaults.THRESHOLD_START)
     args = parser.parse_args()
 
     if args.debug:
@@ -247,7 +258,12 @@ def main():
     corners = None if not args.corners else \
         [tuple(int(val) for val in point.split(',')) for point in args.corners.split()]
 
-    context = Context(dpi=args.dpi, debug_dpi=args.debug_dpi)
+    context = Context(
+        dpi=args.dpi,
+        debug_dpi=args.debug_dpi,
+        vertical_threshold_shrink=args.vertical_threshold_shrink,
+        vertical_threshold_start=args.vertical_threshold_start,
+    )
 
     for infile in args.infile:
         with Image.open(infile) as im:
