@@ -196,6 +196,7 @@ def plot(size, theta, d, *, filename: Optional[Path] = None, dpi: int = 75):
 
     col1, row1 = size
     plt.figure(figsize=(30, 18))
+    plt.axes().set_aspect('equal', 'box')
 
     for angle, dist in zip(theta, d):
         y0 = (dist - 0 * cos(angle)) / sin(angle)
@@ -205,7 +206,7 @@ def plot(size, theta, d, *, filename: Optional[Path] = None, dpi: int = 75):
     plt.xlim(0, col1)
     plt.ylim(0, row1)
     plt.gca().invert_yaxis()
-    plt.axes().set_aspect('equal', 'box')
+
 
     name = '{}-{:04d}'.format(int(time()), next(plot_counter)) if filename is None \
             else filename.stem
