@@ -1,6 +1,6 @@
 from setuptools import setup
 
-packages = ['imaging', 'imaging.core']
+packages = ['imaging', 'imaging.core', 'imaging.scripts']
 
 setup(
     name='imaging-tools',
